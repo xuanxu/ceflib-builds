@@ -17,7 +17,10 @@ jobs:
           cache: 'pip' # caching pip dependencies
 
       - name: Install Python requirements
-        run: pip install -r codebase/PYTHON/requirements.txt
+        run: |
+          pip install -r codebase/PYTHON/requirements.txt
+          pip show pip
+          python -c "import site; print(site.getsitepackages()[0])
       
       - name: Build core C library
         run: |
