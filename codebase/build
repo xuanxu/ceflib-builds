@@ -19,7 +19,7 @@ ARCH=$(arch)
 
 ##	Define the install directory
 #
-INSTALL_DIR=${HOME}/dev/CEFLIB
+INSTALL_DIR=./codebase
 
 echo	"Generation for ${OS} ${ARCH}"
 
