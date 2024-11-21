@@ -19,7 +19,7 @@ ARCH=$(arch)
 
 ##	Define the install directory
 #
-INSTALL_DIR=.
+INSTALL_DIR=${HOME}/codebase
 
 echo	"Generation for ${OS} ${ARCH}"
 
