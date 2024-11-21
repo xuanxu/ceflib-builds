@@ -1,0 +1,86 @@
+#
+#	Fichier	: $RCSfile: Makefile_shared,v $, v $Revision: 1.2 $
+#
+#	Date	: $Date: 2008/05/23 08:51:12 $
+#
+#	Auteur	: $Author: barthe $
+#
+#	Version	: %Z% version %I% de %M% du %G%
+#
+#	================================================================================
+#
+#	Fichier Makefile de la librairie CISLIB
+#
+##
+
+#		Composition des options de compilations
+#		---------------------------------------
+#
+CFLAGS =	$(CDEBUG) $(CANSI) $(COPTI) -I inc
+FFLAGS =
+LDFLAGS =
+
+#		Repertoire de recherche des sources
+#		----------------------------------
+#
+VPATH =		src
+
+#		Nom de la librairie
+#		-------------------
+#
+LIB =		bin/libCIS_$(CC).a
+
+#		Liste des modules de compilation
+#		--------------------------------
+#
+MODULES =	ARCH \
+		ERRORS \
+		HEADER \
+		INTERFACE \
+		LISTS \
+		MATHS \
+		SYMBOLS \
+		TIMES \
+		FILES
+
+
+#		Nom des fichiers objets
+#		-----------------------
+#
+OBJS =		$(MODULES:%=obj/%.o) 
+
+
+#		Diverses cibles de compilation
+#		------------------------------
+#
+all:		init $(LIB) done
+
+init:
+		mkdir -p obj
+		mkdir -p bin
+
+clean:
+		rm -rf 	obj
+		rm -f	.make.state
+
+raz:		clean
+		rm -f	$(LIB)
+		
+done:
+
+#		PARTIE A NE PAS MODIFIER
+#		------------------------
+#
+.SUFFIXES:
+.KEEP_STATE:
+
+$(LIB) :	$(LIB)($(OBJS))
+
+$(LIB)(%.o) :	%.o
+		ar -r $@ $%
+
+obj/%.o:	%.c
+		$(CC) -c $(CFLAGS) $< -o $@
+
+obj/%.o:	%.for
+		$(FC) -c $(FFLAGS) $< -o $@

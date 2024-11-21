@@ -1,0 +1,175 @@
+#! /bin/bash
+#
+#	Fichier	: $RCSfile: build,v $
+#
+#	Version	: $Revision: 1.17 $
+#
+#	Auteur	: $Author: barthe $
+#
+#	Date	: $Date: 2015/06/24 14:28:23 $
+#
+#	==========================================================================================
+#
+#	Script file used with makefile, which defines for the most popular operating systems,
+#	C and Fortan compilation options and library access.
+##
+
+OS=$(uname)
+ARCH=$(arch)
+
+##	Define the install directory
+#
+INSTALL_DIR=${HOME}/dev/CEFLIB
+
+echo	"Generation for ${OS} ${ARCH}"
+
+case	${OS} in
+
+Linux)	##	C compiler options
+	#
+	export	CC=gcc 
+	export	CDEBUG=-g
+	#export	CDEBUG="-pg"
+	export	CANSI=-ansi
+	export	COPTI=-O3
+	export	CSHARED=-fPIC
+	export	CLFS=$(getconf LFS_CFLAGS)
+
+	##	Fortran compiler options
+	#
+	# export	FC=g77 
+	export	FC=gfortran
+	export	FDEBUG=-g
+	export	FANSI=
+	export	FOPTI= 
+	export	FSHARED=
+
+	##	Link editor options
+	#
+	export	LD=gcc
+	export	LDMATH=-lm
+	export	ZLIB=-lz
+	export	LDSHARED="${LD} -shared"
+	export	LDLFS=$(getconf LFS_LINTFLAGS)
+
+	##	Archive options
+	#
+	export	AR=ar
+	export	RANLIB=ranlib
+	;;
+
+Darwin)	##	C compiler options
+	#
+
+	export	CC=gcc
+	export	CDEBUG=-g
+	export	CANSI=-ansi
+	export	CSHARED=-fPIC
+
+	#	Link editor options
+	#
+	export	LD=gcc
+	export	LDMATH=-lm
+	export	ZLIB=-lz
+	export	LDSHARED="${CC} -bundle -flat_namespace -undefined suppress"
+
+	##	Archive options
+	#
+	export	AR=ar
+	export	RANLIB=ranlib
+	;;
+
+SunOS) 	##	C compiler options
+	#
+	export	CC=gcc 
+	export	CDEBUG=-g
+	export	CANSI=-ansi
+	export	COPTI=-O3
+	export	CSHARED=-fPIC
+
+	##	Fortran compiler options
+	#
+	# export	FC=g77 
+	export	FC=gfortran
+	export	FDEBUG=-g
+	export	FANSI=
+	export	FOPTI= 
+	export	FSHARED=
+
+	##	Link editor options
+	#
+	export	LD=gcc
+	export	LDMATH=-lm
+	export	ZLIB=-lz
+	export	LDSHARED="${CC} -G"
+
+	##	Archive options
+	#
+	export	AR=ar
+	export	RANLIB=ranlib
+	;;
+
+SunOS_cc)	
+	## C compiler options
+	#
+	export	CC=cc
+	export	CDEBUG=-g
+	export	CANSI=-Xa
+	export	COPTI=-xO3
+	export	CSHARED=-Kpic
+
+	##	Fortran compiler options
+	#
+	export	FC=f77
+	export	FDEBUG=-g -silen
+	export	FANSI=-ansi
+	export	FOPTI=	
+	export	FSHARED=Kpic
+
+	##	Link editor options
+	#
+	export	LD=ld
+	export	LDMATH=-lm
+	export	LDGEN=lgen
+	export	LDF77=-lF77 -lM77 -lsunmath
+	export	LDSHARED="${CC} -G"
+	export	ZLIB=-lz
+
+	##	Archive options
+	#
+	export	AR=ar
+	;;
+
+*)	echo	"ERROR : unknown operating system : ${OS}"
+	exit	100
+esac
+
+
+##	Libraries description
+#
+export	CISLIB_DIR=${INSTALL_DIR}/LIB
+export	CEFLIB_DIR=${INSTALL_DIR}/C
+
+export	CISLIB=${CISLIB_DIR}/bin/libCIS_${CC}.a
+export	CEFLIB=${CEFLIB_DIR}/bin/libCEF_${CC}.a
+
+
+##	MATLAB root directory
+#
+export	MATLAB_DIR=/usr/local/matlab
+
+
+##	PYTHON settings
+#
+export	NUMPY_DIR=/opt/miniconda3/lib/python3.12/site-packages/numpy
+
+
+##	Running make command
+#
+if	[ -f Makefile -o -f makefile ]
+then
+	make	$*
+else
+	echo	"ERROR : no makefile in current directory"
+	exit	100
+fi

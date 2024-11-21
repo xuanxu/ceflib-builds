@@ -1,0 +1,16 @@
+#	Fichier	: $RCSfile: Makefile_cc,v $
+#
+#	Version	: $Revision: 1.1 $
+#
+#	Auteur	: $Author: barthe $
+#
+#	Date	: $Date: 2004/09/15 15:39:05 $
+#
+#	================================================================================	
+#
+#	Fichier Makefile de l'application LIB (compilateur cc)
+#
+
+include	$(CIS_ROOT)/SOFT/GENERIC/Makefile_cc.default
+
+include	mak/Makefile_shared
