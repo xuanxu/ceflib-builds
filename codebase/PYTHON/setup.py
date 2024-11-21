@@ -3,10 +3,12 @@
 from distutils.core import setup
 from distutils.core import Extension
 from os import getenv
+import site
 
 ceflib_dir = getenv ("CEFLIB_DIR")
 cislib_dir = getenv ("CISLIB_DIR")
-numpy_dir = getenv ("NUMPY_DIR")
+
+numpy_dir = site.getsitepackages()[0] + "/numpy"
 
 module = Extension ('ceflib',
 	sources = [ "src/ceflib.c" ],

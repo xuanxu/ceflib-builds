@@ -159,11 +159,6 @@ export	CEFLIB=${CEFLIB_DIR}/bin/libCEF_${CC}.a
 export	MATLAB_DIR=/usr/local/matlab
 
 
-##	PYTHON settings
-#
-export	NUMPY_DIR=/opt/miniconda3/lib/python3.12/site-packages/numpy
-
-
 ##	Running make command
 #
 if	[ -f Makefile -o -f makefile ]
