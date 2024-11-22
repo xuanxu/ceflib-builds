@@ -6,5 +6,5 @@ raz:	clean
 	rm -f ceflib.so
 
 ceflib.so:	src/ceflib.c
-	python setup.py build_ext --inplace
+	python setup.py build_ext --build-lib ./builds
 	#chcon -t textrel_shlib_t ceflib.so
