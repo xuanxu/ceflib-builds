@@ -32,4 +32,4 @@ jobs:
         run: |
           cd codebase/PYTHON
           ../build clean raz all
-          ls -la
+          ls -la ./builds
