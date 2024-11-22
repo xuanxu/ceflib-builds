@@ -27,9 +27,9 @@ jobs:
           ../build clean raz all
           cd ../C
           ../build clean raz all
-          cd ..
+
       - name: Build Python library
         run: |
-          cd PYTHON
+          cd codebase/PYTHON
           ../build clean raz all
-          ls- la
+          ls -la
