@@ -33,3 +33,9 @@ jobs:
           cd codebase/PYTHON
           ../build clean raz all
           ls -la ./builds
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ceflib-python-libs
+          path: codebase/PYTHON/builds/*.so
