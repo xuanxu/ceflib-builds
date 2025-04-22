@@ -2,11 +2,11 @@
  *
  *	Fichier	: $RCSfile: COMPAT.h,v $
  *
- *	Version	: $Revision: 1.4 $
+ *	Version	: $Revision: 1.5 $
  *
  *	Auteur	: $Author: barthe $
  *
- *	Date	: $Date: 2017/06/29 08:56:40 $
+ *	Date	: $Date: 2025/04/22 09:15:49 $
  *
  *	==========================================================================================
  *
@@ -45,12 +45,10 @@
 	int	glob (char *masque, int flags, int (*errfunc) (const char *, int), glob_t *buffer);
 
 #else
-	#include <limits.h>
 	#include <glob.h>
 
 	#define	PATH_SEPARATOR	":"
 	#define	DIR_SEPARATOR	"/"
-
 #endif
 
 #ifdef	__APPLE__
@@ -59,6 +57,8 @@
 
 	#define	MAXDOUBLE	__DBL_MAX__
 	#define	MINDOUBLE	__DBL_MIN__
+#else
+	#include <values.h>
 #endif
 
 #endif
