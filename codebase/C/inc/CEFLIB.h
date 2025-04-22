@@ -2,11 +2,11 @@
  *
  *	Fichier	: $RCSfile: CEFLIB.h,v $
  *
- *	Version	: $Revision: 1.14 $
+ *	Version	: $Revision: 1.16 $
  *
  *	Auteur	: $Author: barthe $
  *
- *	Date	: $Date: 2017/09/14 13:33:31 $
+ *	Date	: $Date: 2025/04/19 15:37:28 $
  *
  *	==========================================================================================
  *
@@ -16,8 +16,8 @@
 #ifndef	__CEFLIB_H
 #define __CEFLIB_H
 
-#define	CEFLIB_RELEASE_VERSION	"1.8.2"
-#define	CEFLIB_RELEASE_DATE	"2017/09/14"
+#define	CEFLIB_RELEASE_VERSION	"1.8.4"
+#define	CEFLIB_RELEASE_DATE	"2025/04/14"
 
 #include "CISLIB.h"
 #include "METADATA.h"

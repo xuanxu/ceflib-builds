@@ -6,8 +6,10 @@
  *
  *	Fonction:	Librairie dynamique de lecture du format CEF
  *
- *	$Id: ceflib.c,v 1.13 2016/06/24 09:37:26 barthe Exp $
+ *	$Id: ceflib.c,v 1.23 2025/04/19 11:28:46 barthe Exp $
  **/
+
+#define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
 
 #include <Python.h>
 #include "numpy/arrayobject.h"
@@ -19,10 +21,10 @@
 #define	IS_SCALAR(var) ((var->nb_size == 1) && (var->nb_elem == 1))
 
 
+
 /*******************************************************************************
  *
  *	Set CEFLIB verbosity
- *	--------------------
  */
 static	PyObject * cef_verbosity (PyObject * self, PyObject * args)
 {
@@ -40,7 +42,6 @@ static	PyObject * cef_verbosity (PyObject * self, PyObject * args)
 /*******************************************************************************
  *
  * 	Display CEFLIB version
- * 	----------------------
  */
 static	PyObject * cef_version (PyObject * self, PyObject * args)
 {
@@ -135,6 +136,7 @@ static	PyObject * cef_metanames (PyObject * self, PyObject * args)
 
 	for (i = 0; i < nb_meta; i++) 
 		PyList_SetItem (res, i,  Py_BuildValue ("s", Get_meta_number (i)->name));
+
 	return res;
 }
 
@@ -188,7 +190,7 @@ static	PyObject * make_attributes_list (t_attr * attr)
  *
  *	Return global attributes names
  */
-static PyObject * cef_gattributes (PyObject * self, PyObject * args)
+static	PyObject * cef_gattributes (PyObject * self, PyObject * args)
 {
 	if (! PyArg_ParseTuple (args, "")) 
 		return NULL;
@@ -211,7 +213,7 @@ static	PyObject * cef_vattributes (PyObject * self, PyObject * args)
 
 	if ((var = Get_variable (str)) == NULL) {
 
-		printf ("ERROR : Unknown variable : %s \n", str);
+		PyErr_Format (PyExc_KeyError, "Unknown variable %s", str);
 		return NULL;
 	}
 
@@ -259,7 +261,7 @@ static	PyObject * cef_gattr (PyObject * self, PyObject * args)
 
 	if ((attr = Get_attr (Get_gattr (), str)) == NULL) {
 
-		printf ("ERROR : unknown global attribute : %s\n", str);
+		PyErr_Format (PyExc_KeyError, "Unknown global attribute %s", str);
 		return NULL;
 	}
 
@@ -283,116 +285,17 @@ static	PyObject * cef_vattr (PyObject * self, PyObject * args)
 
 	if ((var = Get_variable (str)) == NULL) {
 
-		printf ("Variable %s inconnue\n", str);
+		PyErr_Format (PyExc_KeyError, "Unknown variable %s", str);
 		return NULL;
 	}
 
 	if ((attr = Get_attr (var->attr, key)) == NULL) {
 
-		/* On renvoie None, indiquant que l'attribut n'existe pas */
+		/* Return None as attribute doesn't exists */
 		Py_RETURN_NONE;
 	}
 
 	return make_attribute_value (attr);
-}
-
-
-/*******************************************************************************
- *
- *	Return an n_D array of variable data
- */
-static	PyObject * cef_var (PyObject * self, PyObject * args)
-{
-	char *		str;
-	t_variable *	var = NULL;
-	int		i, ndim;
-	int		nelem;
-	int		nrec;
-	npy_intp	dims [10];
-	PyObject *	res = NULL;
-	int		type;
-	int		size;
-
-	if (! PyArg_ParseTuple (args, "s", & str)) 
-		return NULL;
-
-	if ((var = Get_variable (str)) == NULL) {
-
-		printf ("ERROR : unkown variable : %s\n", str);
-		return NULL;
-	}
-
-	nrec  = Records_count ();
-	nelem = var->nb_elem;
-	ndim  = 0;
-	
-	if (var->varying) {
-
-		dims [ndim++] = nrec;
-		nelem *= nrec;
-
-		if (! IS_SCALAR (var))
-			for (i = 0; i < var->nb_size; i++) dims [ndim++] = var->size [i];
-	}
-	else	for (i = 0; i < var->nb_size; i++) dims [ndim++] = var->size [i];
-
-	switch (var->type) {
-
-	case	CEF_ISO_TIME:	
-		type = NPY_DOUBLE;
-		size = sizeof (double);
-		break;
-
-	case	CEF_ISO_TIME_RANGE:	/* Ajouter une dimension (taille = 2) */
-		type = NPY_DOUBLE;
-		dims [ndim++] = 2;
-		nelem *= 2;
-		size = sizeof (double);
-		break;
-
-	case	CEF_CHAR:
-		type = NPY_OBJECT;
-		size = 0;
-		break;
-
-	case	CEF_INT:	
-		type = NPY_INT;
-		size = sizeof (int);
-		break;
-
-	case	CEF_FLOAT:
-		type = NPY_FLOAT;
-		size = sizeof (float);
-		break;
-
-	case	CEF_DOUBLE:
-		type = NPY_DOUBLE;
-		size = sizeof (double);
-		break;
-
-	default: return NULL;
-
-	}
-
-	if (size != 0) {
-
-		res = PyArray_SimpleNewFromData (ndim, dims, type, var->data);
-
-	/*	memcpy (PyArray_DATA (res), var->data, nelem * size); */
-	}
-	else {	res = PyArray_SimpleNew (ndim, dims, type);
-
-		PyObject ** data = PyArray_DATA (res);
-
-		for (i=0; i < nelem; i++) {
-
-			char *		str = ((char **) var->data) [i];
-
-			data [i] = Py_BuildValue ("s", str);
-		}
-	}
-
-	return res;
 }
 
 
@@ -411,9 +314,10 @@ static	PyObject * milli_to_isotime (PyObject * self, PyObject * args)
 	return Py_BuildValue ("s", Milli_to_ISOTIME (milli, res));
 }
 
+
 /*******************************************************************************
  *
- *	Convertes internal time-tags to Unix time stamp
+ *	Converts internal time-tags to Unix time stamp
  *
  *	internal : (double) milli-seconds from 1958-01-01T00:000
  *
@@ -435,7 +339,6 @@ static	PyObject * milli_to_timestamp (PyObject * self, PyObject * args)
 /*******************************************************************************
  *
  *	Convert ISOTIME strings to internal time-tags
- *
  */
 static	PyObject * isotime_to_milli (PyObject * self, PyObject * args)
 {
@@ -450,31 +353,393 @@ static	PyObject * isotime_to_milli (PyObject * self, PyObject * args)
 
 /*******************************************************************************
  *
+ *	Compute sizes and dimensions of numpy array
+ */
+static	void	Compute_numpy_sizes (t_variable * var, int * nb_elem, int * nb_dim, npy_intp * dims)
+{
+	int	nrec = Records_count();
+	int	nelem = var->nb_elem;
+	int	ndim = 0;
+	int	i;
+
+	if (var->varying) {
+
+		dims [ndim++] = nrec;
+		nelem *= nrec;
+
+		if (! IS_SCALAR (var))
+			for (i = 0; i < var->nb_size; i++) dims [ndim++] = var->size [i];
+	}
+	else	for (i = 0; i < var->nb_size; i++) dims [ndim++] = var->size [i];
+
+	*nb_elem = nelem;
+	*nb_dim = ndim;
+}
+
+
+/*******************************************************************************
+ *
+ *	Return an numpy array of variable data
+ */
+static	PyObject * cef_var (PyObject * self, PyObject * args)
+{
+	char *		str;
+	t_variable *	var = NULL;
+	int		i, ndim, nelem;
+	int		type;
+	npy_intp	dims [10];
+	PyObject *	res = NULL;
+
+	if (! PyArg_ParseTuple (args, "s", & str)) 
+		return NULL;
+
+	if ((var = Get_variable (str)) == NULL) {
+
+		PyErr_Format (PyExc_KeyError, "Unknwon variable %s", str);
+		return NULL;
+	}
+
+	Compute_numpy_sizes (var, & nelem, & ndim, dims);
+
+	switch (var->type) {
+
+	case	CEF_ISO_TIME:	
+		type = NPY_DOUBLE;
+		break;
+
+	case	CEF_ISO_TIME_RANGE:	/* add new dimension of size = 2 */
+		type = NPY_DOUBLE;
+		dims [ndim++] = 2;
+		nelem *= 2;
+		break;
+
+	case	CEF_CHAR:
+		type = NPY_OBJECT;
+		break;
+
+	case	CEF_INT:	
+		type = NPY_INT;
+		break;
+
+	case	CEF_FLOAT:
+		type = NPY_FLOAT;
+		break;
+
+	case	CEF_DOUBLE:
+		type = NPY_DOUBLE;
+		break;
+
+	default: 
+		return NULL;
+	}
+
+	if (type != NPY_OBJECT) {
+
+		res = PyArray_SimpleNewFromData (ndim, dims, type, var->data);
+	}
+	else {
+		res = PyArray_SimpleNew (ndim, dims, type);
+
+		PyObject ** data = PyArray_DATA ((PyArrayObject *) res);
+
+		for (i=0; i < nelem; i++) {
+
+			char *	str = ((char **) var->data) [i];
+
+			data [i] = Py_BuildValue ("s", str);
+		}
+	}
+	return res;
+}
+
+
+/*******************************************************************************
+ *
+ *	Return array of Unix timestamps from a given ISOTIME variable
+ */
+static 	PyObject * timestamp (PyObject * self, PyObject * args)
+{
+	char *		str;
+	t_variable *	var = NULL;
+	int		i, nelem, ndim;
+	npy_intp	dims [10];
+
+	if (! PyArg_ParseTuple (args, "s", & str)) 
+		return NULL;
+
+	if ((var = Get_variable (str)) == NULL) {
+
+		PyErr_Format (PyExc_KeyError, "Unknwon variable %s", str);
+		return NULL;
+	}
+
+	Compute_numpy_sizes (var, & nelem, & ndim, dims);
+
+	switch (var->type) {
+
+	case	CEF_ISO_TIME:	
+		break;
+
+	case	CEF_ISO_TIME_RANGE:	/* add a new dimension of size = 2 */
+		dims [ndim++] = 2;
+		nelem *= 2;
+		break;
+
+	default: 
+		PyErr_Format (PyExc_TypeError, "Variable %s type must be a ISO_TIME or ISO_TIME_RANGE", str);
+		return NULL;
+	}
+
+	PyObject *	res = PyArray_SimpleNew (ndim, dims, NPY_DOUBLE);
+
+	npy_double *	data = (npy_double *) PyArray_DATA ((PyArrayObject *) res);
+
+	double *	t = (double *) var->data;
+
+	npy_int64	offset = 4383L * 86400L;
+
+	for (i=0; i < nelem; i++) {
+	
+		data [i] = t[i] / 1000.0 - offset;
+	}
+	return res;
+}
+
+
+/*******************************************************************************
+ *
+ *	Return array of datetime from a given ISOTIME variable
+ */
+static 	PyObject * datetime (PyObject * self, PyObject * args)
+{
+	char *		str;
+	t_variable *	var = NULL;
+	int		i, ndim, nelem;
+	npy_intp	dims [10];
+
+	if (! PyArg_ParseTuple (args, "s", & str)) 
+		return NULL;
+
+	if ((var = Get_variable (str)) == NULL) {
+
+		PyErr_Format (PyExc_Exception, "Unkown CEF variable : %s", str);
+		return NULL;
+	}
+
+	Compute_numpy_sizes (var, & nelem, & ndim, dims);
+
+	switch (var->type) {
+
+	case	CEF_ISO_TIME:	
+		break;
+
+	case	CEF_ISO_TIME_RANGE:	/* 2 values per record */
+		dims [ndim++] = 2;
+		nelem *= 2;
+		break;
+
+	default: 
+		PyErr_Format (PyExc_TypeError, "Variable %s type must be a ISO_TIME or ISO_TIME_RANGE", str);
+		return NULL;
+	}
+
+	//	import datetime module
+
+	PyObject * mod = PyImport_ImportModule ("datetime");
+
+	if (mod == NULL) return NULL;
+
+	//	get class datetime.datetime 
+
+	PyObject * class = PyObject_GetAttrString (mod, "datetime");
+
+	if (class == NULL) return NULL;
+
+	//	create array of object (datetime.datetime)
+	//
+	PyObject *	res = PyArray_SimpleNew (ndim, dims, NPY_OBJECT);
+
+	PyObject **	data = PyArray_DATA ((PyArrayObject *) res);
+
+	double *	t = (double *) var->data;
+
+	for (i=0; i < nelem; i++) {
+
+		double	timestamp = t[i] / 1000.0 - 4383 * 86400;
+
+		data [i] = PyObject_CallMethod (class, "utcfromtimestamp", "d", timestamp);
+	}
+
+	return res;
+}
+
+
+/*******************************************************************************
+ *
+ *	Return array of datetime64 from a given ISOTIME variable
+ */
+static 	PyObject * datetime64 (PyObject * self, PyObject * args)
+{
+	char *		str;
+	t_variable *	var = NULL;
+	int		i, nelem, ndim;
+	npy_intp	dims [10];
+
+	if (! PyArg_ParseTuple (args, "s", & str)) 
+		return NULL;
+
+	if ((var = Get_variable (str)) == NULL) {
+
+		PyErr_Format (PyExc_KeyError, "Unknown variable %s", str);
+		return NULL;
+	}
+
+	Compute_numpy_sizes (var, & nelem, & ndim, dims);
+
+	switch (var->type) {
+
+	case	CEF_ISO_TIME:	
+		break;
+
+	case	CEF_ISO_TIME_RANGE:	/* add a new dimension of size = 2 */
+		dims [ndim++] = 2;
+		nelem *= 2;
+		break;
+
+	default: 
+		PyErr_Format (PyExc_TypeError, "Variable %s type must be a ISO_TIME or ISO_TIME_RANGE", str);
+		return NULL;
+	}
+
+	PyObject * 	data_type = Py_BuildValue ("s", "datetime64[ms]");
+
+	PyArray_Descr *	descr;
+
+	PyArray_DescrConverter (data_type, & descr);
+	
+	PyObject *	res = PyArray_SimpleNewFromDescr (ndim, dims, descr);
+
+	npy_int64 *	data = (npy_int64 *) PyArray_DATA ((PyArrayObject *) res);
+
+	double *	t = (double *) var->data;
+
+	npy_int64	offset = 4383L * 86400000L;
+
+	for (i=0; i < nelem; i++) {
+	
+		data [i] = (npy_int64) t[i] - offset;
+	}
+	return res;
+}
+
+
+PyDoc_STRVAR (doc_verbosity,
+	"verbosity (level: int) > None\n\n"
+	"Set CEFLIB verbosity level(0..5)");
+
+PyDoc_STRVAR (doc_version,
+	"version() -> str\n\n"
+	"Display CEFLIB version");
+
+PyDoc_STRVAR (doc_read,
+	"read (filename: str) -> error_code: int\n\n"
+	"Read CEF filename and load metadata and variable data in memory" );
+
+PyDoc_STRVAR (doc_read_metadata,
+	"read_metadata (filename: str) -> error_code: int\n\n"""""
+	"Read CEF filename metadata only" );
+
+PyDoc_STRVAR (doc_close,
+	"close() -> None\n\n"
+	"Release allocated ressources");
+
+PyDoc_STRVAR (doc_records, 
+	"records() -> int\n\n"
+	"Get inumber of records of an open CEF file");
+
+PyDoc_STRVAR (doc_varnames,
+	"varnames () -> list[str]\n\n"
+	"Return the list of CEF variable names");
+
+PyDoc_STRVAR (doc_var,
+	"var (varname: str) -> np.array ()\n\n"
+	"Return a numpy array with the values of CEF variable");
+
+PyDoc_STRVAR (doc_metanames,
+	"metanames() -> list[str]\n\n"
+	"Return list of metadata sections names");
+
+PyDoc_STRVAR (doc_meta,
+	"meta (name: str) -> str | list[str]\n\n"
+	"Return metadata entries for a given name" );
+
+PyDoc_STRVAR (doc_gattributes,
+	"gattributes () -> list[str]\n\n"
+	"Return list of global attribute names");
+
+PyDoc_STRVAR (doc_vattributes,
+	"vattributes (varname: str) -> list[str]\n\n"
+	"Return list of attributes for a given CEF variable name");
+
+PyDoc_STRVAR (doc_gattr,
+	"gattr (attrname: str) -> str | list[str]\n\n"
+	"Return global attribute value");
+
+PyDoc_STRVAR (doc_vattr,
+	"vattr (varname: str, attrname: str) -> str | list[str]\n\n"
+	"Return attribute value for a given variable");
+
+PyDoc_STRVAR (doc_milli_to_isotime,
+	"milli_to_isotime (milli: float [, digits:int]) -> str\n\n"
+	"Converts internal time-tags (milli seconds from 1988) to ISOTIME strings\n"
+	"digits: 0 = seconds, 3 = milli-secondsi, 6 = micro-seconds");
+
+PyDoc_STRVAR (doc_isotime_to_milli,
+	"isotime_to_milli (isotime: str) -> float\n\n"
+	"Converts ISOTIME to internal time-tags" );
+
+PyDoc_STRVAR (doc_milli_to_timestamp,
+	"milli_to_timestamp (float) -> float\n\n"
+	"Converts internal time-tag (milli seconds from 1958) to Unix timestamp");
+
+PyDoc_STRVAR (doc_datetime,
+	"datetime (varname: str) -> np.array (datetime.datetime)\n\n"
+	"Return numpy array of datetime.datetime from an ISOTIME variable");
+
+PyDoc_STRVAR (doc_datetime64,
+	"datetime64 (varname: str) -> np.array (dtype = 'datetime64[ms]')\n\n"
+	"Return numpy array of datetime64 from an ISOTIME variable");
+
+PyDoc_STRVAR(doc_timestamp,
+	"timestamp (varname: str) -> np.array (dtype=float)\n\n"
+	"Return numpy array of Unix timestamps");
+
+/*******************************************************************************
+ *
  *	List of library callable methods
  */
 static	PyMethodDef fonctions [] = {
 
-	{ "verbosity",		cef_verbosity,		METH_VARARGS,	"verbosity (int) -- return None\n"
-									"Set CEFLIB verbosity (0..5)" },
-	{ "version",		cef_version,		METH_VARARGS,	"Display CEFLIB version"},
-	{ "read",		cef_read,		METH_VARARGS,	"read(string) -- return error code\n"
-									"Read CEF file and load data in memory" },
-	{ "read_metadata",	cef_read_metadata,	METH_VARARGS,	"read_metadata(string) -- return error code\n"
-									"Read CEF file metadata only" },
-	{ "close",		cef_close,		METH_NOARGS,	"Release allocated ressources"},
-	{ "records",		cef_records,		METH_VARARGS,	"Get records number of an open CEF file"},
-	{ "varnames",		cef_varnames,		METH_VARARGS,	"varnames () -- List of strings\n"
-									"Get CEF variable names" },
-	{ "var",		cef_var,		METH_VARARGS,	"Get variable data" },
-	{ "metanames",		cef_metanames,		METH_VARARGS,	"Get metadata sections names" },
-	{ "meta",		cef_meta,		METH_VARARGS,	"Get metadata entries" },
-	{ "gattributes",	cef_gattributes,	METH_VARARGS,	"Get CEF global attributes" },
-	{ "vattributes",	cef_vattributes,	METH_VARARGS,	"Get CEF global attributes" },
-	{ "gattr",		cef_gattr,		METH_VARARGS,	"Get globale attribute value"},
-	{ "vattr",		cef_vattr,		METH_VARARGS,	"Get attribute value for a given variable"},
-	{ "milli_to_isotime",	milli_to_isotime, 	METH_VARARGS,	"Converts internal time-tags to ISOTIME strings" },
-	{ "isotime_to_milli",	isotime_to_milli,	METH_VARARGS, 	"Converts ISOTIME to internal time-tags" },
-	{ "milli_to_timestamp", milli_to_timestamp,	METH_VARARGS,	"Converts internal time-tags fo Unix timestamp" },
+	{ "verbosity",		cef_verbosity,		METH_VARARGS,	doc_verbosity },
+	{ "version",		cef_version,		METH_VARARGS,	doc_version },
+	{ "read",		cef_read,		METH_VARARGS,	doc_read},
+	{ "read_metadata",	cef_read_metadata,	METH_VARARGS,	doc_read_metadata },
+	{ "close",		cef_close,		METH_NOARGS,	doc_close},
+	{ "records",		cef_records,		METH_VARARGS,	doc_records},
+	{ "varnames",		cef_varnames,		METH_VARARGS,	doc_varnames },
+	{ "var",		cef_var,		METH_VARARGS,	doc_var },
+	{ "metanames",		cef_metanames,		METH_VARARGS,	doc_metanames },
+	{ "meta",		cef_meta,		METH_VARARGS,	doc_meta },
+	{ "gattributes",	cef_gattributes,	METH_VARARGS,	doc_gattributes },
+	{ "vattributes",	cef_vattributes,	METH_VARARGS,	doc_vattributes },
+	{ "gattr",		cef_gattr,		METH_VARARGS,	doc_gattr },
+	{ "vattr",		cef_vattr,		METH_VARARGS,	doc_vattr },
+	{ "milli_to_isotime",	milli_to_isotime, 	METH_VARARGS,	doc_milli_to_isotime },
+	{ "isotime_to_milli",	isotime_to_milli,	METH_VARARGS, 	doc_isotime_to_milli },
+	{ "milli_to_timestamp", milli_to_timestamp,	METH_VARARGS,	doc_milli_to_timestamp },
+	{ "datetime",		datetime,		METH_VARARGS,	doc_datetime },
+	{ "datetime64",		datetime64,		METH_VARARGS,	doc_datetime64 },
+	{ "timestamp",		timestamp,		METH_VARARGS,	doc_timestamp },
 	{ NULL, NULL, 0, NULL }
 };
 
@@ -485,7 +750,6 @@ static	PyMethodDef fonctions [] = {
  *
  * 	Separate behaviour for Python 3.x and Python 2.x
  */
-
 #if PY_MAJOR_VERSION >= 3
 
 	static struct PyModuleDef moduledef = {
@@ -503,7 +767,7 @@ static	PyMethodDef fonctions [] = {
 		
 	#define INITERROR return NULL
 
-	PyObject *PyInit_ceflib(void)
+	PyMODINIT_FUNC PyInit_ceflib(void)
 	{
 		PyObject *module = PyModule_Create (& moduledef);
 
@@ -511,7 +775,6 @@ static	PyMethodDef fonctions [] = {
 		
 		return module;
 	}
-
 #else
 	#define	INITERROR return
 

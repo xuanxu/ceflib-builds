@@ -2,11 +2,11 @@
  *
  *	Fichier	: $RCSfile: FILES.c,v $
  *
- *	Version	: $Revision: 1.22 $
+ *	Version	: $Revision: 1.23 $
  *
  *	Auteur	: $Author: barthe $
  *
- *	Date	: $Date: 2017/06/27 09:37:17 $
+ *	Date	: $Date: 2025/04/01 13:52:45 $
  *
  *	==========================================================================================
  *
@@ -192,8 +192,11 @@ t_err	Create_tmp_directory (char * key)
 {
 	char *		fonction = FNAME ("Create_tmp_directory");
 	t_err		error = OK;
+	int		r;
 
-	sprintf (tmp_directory, "/tmp/%s", key);
+	r = snprintf (tmp_directory, FILENAME_LENGTH, "/tmp/%s", key);
+
+	assert (r < FILENAME_LENGTH);
 
 #if defined(_WIN32)
 
@@ -244,12 +247,14 @@ t_err	Clear_tmp_directory (void)
 	char *		fonction = FNAME ("Clear_tmp_directory");
 	t_err		error = OK;
 	t_filename	masque;
-	int		i;
+	int		i, r;
 	int		count = -1;
 
 	if (strlen (tmp_directory) == 0) goto EXIT;
 
-	sprintf (masque, "%s/*.tmp", tmp_directory);
+	r = snprintf (masque, FILENAME_LENGTH, "%s/*.tmp", tmp_directory);
+
+	assert (r < FILENAME_LENGTH);
 
 	Affiche_trace (1, fonction, "Purge repertoire %s", tmp_directory);
 
@@ -304,8 +309,11 @@ EXIT:	return error;
 FILE *	Open_tmp_file (char * key, char * mode)
 {
 	t_filename	filename;
+	int		r;
 
-	sprintf (filename, "%s/%s.tmp", tmp_directory, key);
+	r = snprintf (filename, FILENAME_LENGTH, "%s/%s.tmp", tmp_directory, key);
+
+	assert (r < FILENAME_LENGTH);
 
 	return fopen (filename, mode);
 }

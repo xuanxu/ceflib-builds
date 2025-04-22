@@ -45,7 +45,7 @@
 	int	glob (char *masque, int flags, int (*errfunc) (const char *, int), glob_t *buffer);
 
 #else
-	#include "limits.h"
+	#include <limits.h>
 	#include <glob.h>
 
 	#define	PATH_SEPARATOR	":"

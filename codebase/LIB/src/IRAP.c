@@ -2,11 +2,11 @@
  *
  *	Fichier	: $RCSfile: IRAP.c,v $
  *
- *	Version	: $Revision: 1.6 $
+ *	Version	: $Revision: 1.7 $
  *
  *	Auteur	: $Author: barthe $
  *
- *	Date	: $Date: 2017/06/27 09:37:17 $
+ *	Date	: $Date: 2025/04/01 13:53:29 $
  *
  *	==========================================================================================
  *
@@ -171,12 +171,15 @@ t_err	Get_CEF_directory (char * dataset, t_filename directory)
 	char *		fonction = FNAME ("Get_CEF_directory");
 	t_err		error = OK;
 	t_filename	experiment;
+	int		r;
 
 	strcpy (directory, "");
 
 	if (Erreur (error = Get_experiment (dataset, experiment))) goto EXIT;
 
-	sprintf (directory, "%s/%s/%s", csa_root, experiment, dataset);
+	r = snprintf (directory, FILENAME_LENGTH, "%s/%s/%s", csa_root, experiment, dataset);
+
+	assert (r < FILENAME_LENGTH);	
 
 EXIT:	return error;
 }
@@ -196,7 +199,7 @@ t_err	Get_CEF_filename (char * dataset, t_date date, t_filename filename)
 	t_filename 	directory;
 	char		amj [15];
 	t_filename	pattern;
-	int		count;
+	int		r, count;
 
 	strcpy (filename, "");
 
@@ -204,7 +207,9 @@ t_err	Get_CEF_filename (char * dataset, t_date date, t_filename filename)
 
 	sprintf (amj, "%04d%02d%02d", date.annee, date.mois, date.jour);
 
-	sprintf (pattern, "%s/%s__%s*_V*.cef*", directory, dataset, amj);
+	r = snprintf (pattern, FILENAME_LENGTH, "%s/%s__%s*_V*.cef*", directory, dataset, amj);
+
+	assert (r < FILENAME_LENGTH);
 
 	if (Erreur (error = Search_files (pattern, & count))) goto EXIT;
 
@@ -231,10 +236,13 @@ t_err	Create_CEF_directory (char * dataset)
 	t_filename 	experiment;
 	t_filename	directory;
 	mode_t		mode = 0755;
+	int		r;
 
 	if (Erreur (error = Get_experiment  (dataset, experiment))) goto EXIT;
 
-	sprintf (directory, "%s/%s/%s", caa_root, experiment, dataset);
+	r = snprintf (directory, FILENAME_LENGTH, "%s/%s/%s", caa_root, experiment, dataset);
+
+	assert (r < FILENAME_LENGTH);
 
 #if defined (_WIN32)
 
@@ -271,10 +279,13 @@ t_err	Get_CEF_version (char * dataset, t_date date, int * version)
 	t_filename	catalog;
 	char		buffer [200];
 	t_filename	pattern;
+	int		r;
 
 	* version = 0;
 
-	sprintf (catalog, "%s/CATALOG/%s.cat", csa_root, dataset);
+	r = snprintf (catalog, FILENAME_LENGTH, "%s/CATALOG/%s.cat", csa_root, dataset);
+
+	assert (r < FILENAME_LENGTH);
 
 	if ((entree = fopen (catalog, "r")) == NULL) {
 
@@ -285,9 +296,11 @@ t_err	Get_CEF_version (char * dataset, t_date date, int * version)
 
 	Affiche_trace (1, fonction, "Lecture %s", catalog);
 
-	sprintf (pattern, "%%*s %s__%04d%02d%02d_V%%2d.cef", 
+	r = snprintf (pattern, FILENAME_LENGTH, "%%*s %s__%04d%02d%02d_V%%2d.cef", 
 		dataset,
 		date.annee, date.mois, date.jour);
+
+	assert (r < FILENAME_LENGTH);
 
 	while (Read_line (buffer, entree) == OK) {
 
@@ -325,6 +338,7 @@ t_err	New_CEF_filename (char * dataset, t_date date, t_filename filename)
 	int		version;
 	char		amj [10];
 	t_filename	experiment;
+	int		r;
 
 	strcpy (filename, "");
 
@@ -338,7 +352,7 @@ t_err	New_CEF_filename (char * dataset, t_date date, t_filename filename)
 
 	sprintf (amj, "%04d%02d%02d", date.annee, date.mois, date.jour);
 
-	sprintf (filename, "%s/%s/%s/%s__%s_V%02d.cef", 
+	r = snprintf (filename, FILENAME_LENGTH, "%s/%s/%s/%s__%s_V%02d.cef", 
 		caa_root, 
 		experiment, 
 		dataset, 
@@ -346,6 +360,7 @@ t_err	New_CEF_filename (char * dataset, t_date date, t_filename filename)
 		amj, 
 		version);
 
+	assert (r < FILENAME_LENGTH);
 
 EXIT:	return error;
 }

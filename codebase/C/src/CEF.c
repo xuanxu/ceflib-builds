@@ -2,11 +2,11 @@
  *
  *	Fichier	: $RCSfile: CEF.c,v $
  *
- *	Version	: $Revision: 1.67 $
+ *	Version	: $Revision: 1.68 $
  *
  *	Auteur	: $Author: barthe $
  *
- *	Date	: $Date: 2017/09/14 14:13:46 $
+ *	Date	: $Date: 2025/04/01 14:46:31 $
  *
  *	==========================================================================================
  *
@@ -296,6 +296,7 @@ static char * Search_path (char * filename)
 	char * 		fonction = FNAME ("Search_path");
 	char * 		buffer = NULL;
 	char *		ptr;
+	int		r;
 	static t_filename fullpath;
 
 	strcpy (fullpath, filename);
@@ -312,7 +313,9 @@ static char * Search_path (char * filename)
 
 	for (ptr = strtok (buffer, PATH_SEPARATOR); ptr != NULL; ptr = strtok (NULL, PATH_SEPARATOR)) {
 
-		sprintf (fullpath, "%s%s%s", ptr, DIR_SEPARATOR, filename);
+		r = snprintf (fullpath, FILENAME_LENGTH, "%s%s%s", ptr, DIR_SEPARATOR, filename);
+
+		assert (r < FILENAME_LENGTH);
 
 		if (access (fullpath, F_OK | R_OK) == 0) goto EXIT;
 	}
@@ -460,7 +463,9 @@ static	t_variable *	Create_constant (T_CEF_TYPE t, int nb_elem, char * value)
 	char *		fonction = FNAME ("Create_constant");
 	t_err		error = OK;
 	t_variable *	new = NULL;
-	char		name [10];
+	char		name [15];
+
+	assert (root.nb_const < 999);
 
 	sprintf (name, "K%03d", ++ root.nb_const);
 
@@ -767,7 +772,7 @@ t_err	Display_variables (void)
 
 	for (i = 0; i < root.nb_var; i++) {
 
-		char	buffer [100];
+		char	buffer [STR_SIZE];
 
 		t_variable * 	var = root.variable [i];
 

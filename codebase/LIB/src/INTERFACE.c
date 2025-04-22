@@ -2,11 +2,11 @@
  *
  *	Fichier	: $RCSfile: INTERFACE.c,v $
  *
- *	Version	: $Revision: 1.13 $
+ *	Version	: $Revision: 1.14 $
  *
  *	Auteur	: $Author: barthe $
  *
- *	Date	: $Date: 2017/06/27 10:44:14 $
+ *	Date	: $Date: 2025/04/01 13:53:11 $
  *
  *	==========================================================================================
  *
@@ -258,7 +258,6 @@ static	char *	File_reference (t_data_source source, t_file_ident ident)
 		Key_from_val (cis_data_source, source),
 		Key_from_val (cis_file_ident, ident));
 		
-
 	return buffer;	
 }
 
@@ -402,21 +401,24 @@ t_err	Compute_directory (t_data_source source, int sat, t_date date, char * dire
 	char *		fonction = FNAME ("Compute_directory");
 	t_err		error = OK;
 	char		amj [9];
+	int		r;
 
 	sprintf (amj, "%04d%02d%02d", date.annee, date.mois, date.jour);
 
 	switch (source) {
 
-	case L1  :	sprintf (directory, "%s/DATA/L1/%s/CLUSTER%d", Get_CIS_root(), amj, sat);
+	case L1  :	r = snprintf (directory, FILENAME_LENGTH, "%s/DATA/L1/%s/CLUSTER%d", Get_CIS_root(), amj, sat);
 			break;
-	case L2  :	sprintf (directory, "%s/DATA/L2/%s/CLUSTER%d", Get_CIS_root(), amj, sat);
+	case L2  :	r = snprintf (directory, FILENAME_LENGTH, "%s/DATA/L2/%s/CLUSTER%d", Get_CIS_root(), amj, sat);
 			break;
-	case L3  :	sprintf (directory, "%s/DATA/L3/%s/CLUSTER%d", Get_CIS_root(), amj, sat);
+	case L3  :	r = snprintf (directory, FILENAME_LENGTH, "%s/DATA/L3/%s/CLUSTER%d", Get_CIS_root(), amj, sat);
 			break;
 	default  :	error = ERROR;
 			strcpy (directory, "");
 			goto EXIT;
 	}
+	assert (r < FILENAME_LENGTH);
+
 EXIT:	return error;
 }
 
@@ -431,7 +433,7 @@ t_err	Clear_directory (t_data_source source, int sat, t_date date)
 	char *		fonction = FNAME ("Clear_directory");
 	t_err		error = OK;
 	struct stat	info;
-	int		i, nbre;
+	int		i, r, nbre;
 	t_filename	directory;
 	t_filename	masque;
 
@@ -470,7 +472,9 @@ t_err	Clear_directory (t_data_source source, int sat, t_date date)
 		goto EXIT;
 	}
 
-	sprintf (masque, "%s/*", directory);
+	r = snprintf (masque, FILENAME_LENGTH, "%s/*", directory);
+
+	assert (r < FILENAME_LENGTH);
 
 	if (Erreur (error = Search_files (masque, & nbre))) goto EXIT;
 	
@@ -504,6 +508,7 @@ t_err	Compute_CIS_filenames (t_data_source source, int sat, t_date date, int ver
 	t_filename	directory;
 	char		amj [9];
 	char		vmask [3];
+	int		r;
 
 	if (Erreur (error = Compute_directory (source, sat, date, directory))) goto EXIT;
 
@@ -525,9 +530,13 @@ t_err	Compute_CIS_filenames (t_data_source source, int sat, t_date date, int ver
 
 		if (ptr->source != source) continue;
 
-		sprintf (buffer, "%s/%s", directory, ptr->pattern);
+		r = snprintf (buffer, FILENAME_LENGTH, "%s/%s", directory, ptr->pattern);
 
-		sprintf (ptr->filename, buffer, sat, amj, vmask);
+		assert (r < FILENAME_LENGTH);
+
+		r = snprintf (ptr->filename, FILENAME_LENGTH, buffer, sat, amj, vmask);
+
+		assert (r < FILENAME_LENGTH);
 
 		if (version == VMAX) {
 

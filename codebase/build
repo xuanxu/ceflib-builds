@@ -2,11 +2,11 @@
 #
 #	Fichier	: $RCSfile: build,v $
 #
-#	Version	: $Revision: 1.17 $
+#	Version	: $Revision: 1.19 $
 #
 #	Auteur	: $Author: barthe $
 #
-#	Date	: $Date: 2015/06/24 14:28:23 $
+#	Date	: $Date: 2025/04/02 13:01:35 $
 #
 #	==========================================================================================
 #
@@ -17,7 +17,7 @@
 OS=$(uname)
 ARCH=$(arch)
 
-##	Define the install directory
+##	Define the install directory 
 #
 INSTALL_DIR=..
 
@@ -158,6 +158,12 @@ export	CEFLIB=${CEFLIB_DIR}/bin/libCEF_${CC}.a
 #
 export	MATLAB_DIR=/usr/local/matlab
 
+
+##	PYTHON settings (obsolete)
+#
+#	export	NUMPY_DIR=$(python -c "import os, numpy; print (os.path.dirname (numpy.__file__))")
+#
+#	replaced with numget.get_include() in PYTHON/setup.py
 
 ##	Running make command
 #

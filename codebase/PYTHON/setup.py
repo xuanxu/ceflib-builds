@@ -1,21 +1,22 @@
 #! /usr/bin/env python
 
-from distutils.core import setup
-from distutils.core import Extension
+VERSION="1.8.4"
+
+from setuptools import setup
+from setuptools import Extension
 from os import getenv
-import site
+import numpy as np
 
 ceflib_dir = getenv ("CEFLIB_DIR")
 cislib_dir = getenv ("CISLIB_DIR")
-
-numpy_dir = site.getsitepackages()[0] + "/numpy"
 
 module = Extension ('ceflib',
 	sources = [ "src/ceflib.c" ],
 	include_dirs = [ 
 		"%s/inc" % cislib_dir,
 		"%s/inc" % ceflib_dir,
-		"%s/_core/include" % numpy_dir,
+		np.get_include(),
+		# "%s/core/include" % numpy_dir,
 	],
 	library_dirs = [ 
 		"%s/bin" % cislib_dir,
@@ -28,7 +29,7 @@ module = Extension ('ceflib',
 )
 	
 setup (	name = "ceflib",
-	version = "1.7.3",
+	version = VERSION,
 	description = 'Python CEFLIB interface',
 	author = "Alain BARTHE",
 	author_email = "alain.barthe@irap.omp.eu",
