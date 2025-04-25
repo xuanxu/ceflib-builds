@@ -2,11 +2,11 @@
  *
  *	Fichier	: $RCSfile: CEF.c,v $
  *
- *	Version	: $Revision: 1.68 $
+ *	Version	: $Revision: 1.69 $
  *
  *	Auteur	: $Author: barthe $
  *
- *	Date	: $Date: 2025/04/01 14:46:31 $
+ *	Date	: $Date: 2025/04/24 15:48:21 $
  *
  *	==========================================================================================
  *
@@ -424,7 +424,7 @@ static	t_variable *	Create_variable (char * var)
 
 	if ((new = (t_variable *) malloc (sizeof (t_variable))) == NULL) {
 
-		Affiche_erreur (fonction, "Allocation variable %s impossible", var);
+		Affiche_erreur (fonction, "Dynamic allocation failure variable %s", var);
 		goto EXIT;
 	}
 
@@ -471,7 +471,7 @@ static	t_variable *	Create_constant (T_CEF_TYPE t, int nb_elem, char * value)
 
 	if ((new = Create_variable (name)) == NULL) {
 
-		Affiche_erreur (fonction, "Impossible creer constante %s", name);
+		Affiche_erreur (fonction, "Unable to create constant %s", name);
 		error = ERROR;
 		goto EXIT;
 	}
@@ -570,7 +570,9 @@ t_meta * Get_meta (char * name)
 static	t_err	Clear_descriptor (void)
 {
 	char *		fonction = FNAME ("Clear_descriptor");
+	t_err		error = OK;
 	int		i;
+	
 
 	Affiche_trace (1, fonction, "Release memory");
 
@@ -596,6 +598,8 @@ static	t_err	Clear_descriptor (void)
 	root.record	= 0;
 	root.nb_values	= 0;
 	root.attr	= NULL;
+
+EXIT:	return error;
 }
 	
 
@@ -621,6 +625,7 @@ static	t_err Init_descriptor (void)
 	root.nb_values		= 0;
 	root.entree		= NULL;
 	root.data_until		= NULL;
+	root.attr		= NULL;
 	root.end_of_record	= strdup ("");
 	include.level 		= 0;
 
@@ -651,7 +656,7 @@ static	t_err	Open_CEF_file (char * filename)
 
 	if ((root.entree = GZOPEN (filename, "rt")) == NULL) {
 
-		Affiche_erreur (fonction, "Lecture %s impossible", filename);
+		Affiche_erreur (fonction, "Error opening %s", filename);
 		Affiche_erreur (fonction, "%d : %s", errno, strerror (errno));
 		error = ERR_fopen;
 		goto EXIT;
@@ -1024,7 +1029,7 @@ static	t_err	Allocate_var (t_variable * var)
 
 	if (var->type == CEF_UNDEF) {
 
-		Affiche_erreur (fonction, "Type inconnu : %s", attr);
+		Affiche_erreur (fonction, "Unknown type : %s", attr);
 		error = ERROR;
 		goto EXIT;
 	}
@@ -1102,7 +1107,7 @@ static	t_err	Allocate_var (t_variable * var)
 		break;
 
 	default:	
-		Affiche_erreur (fonction, "Allocation impossible : %s", var->name);
+		Affiche_erreur (fonction, "Unexpected variable type: %s", var->name);
 		var->data = NULL;
 		error = ERROR;
 		break;
@@ -1619,7 +1624,7 @@ t_err	Allocate_table (t_variable * var, t_descr ** table)
 
 	if ((* table = calloc (var->nb_elem, sizeof (t_descr))) == NULL) {
 
-		Affiche_erreur (fonction, "Erreur allocation dynamique");
+		Affiche_erreur (fonction, "Dynamic allocation failure");
 		error = ERR_malloc;
 		goto EXIT;
 	}
@@ -1694,7 +1699,7 @@ t_err	Produce_CEF_header (FILE * output, char * fullname)
 
 	if ((ptr = strstr (logical_file_id, ".cef")) == NULL) {
 
-		Affiche_erreur (fonction, "%s : extension non valide", filename);
+		Affiche_erreur (fonction, "%s : unknown file extension", filename);
 		error = ERROR;
 		goto EXIT;
 	}
@@ -1703,14 +1708,14 @@ t_err	Produce_CEF_header (FILE * output, char * fullname)
 
 	if ((ptr = strstr (logical_file_id, "__")) == NULL) {
 
-		Affiche_erreur (fonction, "%s : format non valide", filename);
+		Affiche_erreur (fonction, "%s : invalid file name", filename);
 		error = ERROR;
 		goto EXIT;
 	}
 
 	if (sscanf (ptr, "__%04d%02d%02d_V%d", & y, & m, & d, & version) != 4) {
 
-		Affiche_erreur (fonction, "%s : format non valide", filename);
+		Affiche_erreur (fonction, "%s : invalid file name", filename);
 		error = ERROR;
 		goto EXIT;
 	}

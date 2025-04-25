@@ -6,7 +6,7 @@
  *
  *	Fonction:	Librairie dynamique de lecture du format CEF
  *
- *	$Id: ceflib.c,v 1.23 2025/04/19 11:28:46 barthe Exp $
+ *	$Id: ceflib.c,v 1.28 2025/04/24 16:12:29 barthe Exp $
  **/
 
 #define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
@@ -19,7 +19,6 @@
 #include "CEFLIB.h"
 
 #define	IS_SCALAR(var) ((var->nb_size == 1) && (var->nb_elem == 1))
-
 
 
 /*******************************************************************************
@@ -296,6 +295,102 @@ static	PyObject * cef_vattr (PyObject * self, PyObject * args)
 	}
 
 	return make_attribute_value (attr);
+}
+
+
+/*******************************************************************************
+ *
+ *	Return dict (attribute, value) for global attributes
+ */
+static	PyObject * cef_gattrs (PyObject * self, PyObject * args)
+{
+	PyObject *	dict = NULL;
+	t_attr *	attr = Get_gattr();
+	int		i;
+
+	if (attr == NULL) return NULL;
+	if (! PyArg_ParseTuple (args, ""))
+		return NULL;
+
+	if ((dict = PyDict_New ()) == NULL)
+		return NULL;
+
+	for (i = 0; i < attr->count; i++) {
+
+		PyDict_SetItemString (dict, 
+			attr->data[i].key,
+			make_attribute_value (attr->data[i].values));
+	}
+	return dict;
+}
+
+
+/*******************************************************************************
+ *
+ *	Return dict (attribute, value) for a given variable
+ */
+static	PyObject * cef_vattrs (PyObject * self, PyObject * args)
+{
+	char *		str;
+	t_variable *	var = NULL;
+	t_attr	*	attr = NULL;
+	PyObject *	dict = NULL;
+	int		i;
+
+	if (! PyArg_ParseTuple (args, "s", & str))
+		return NULL;
+
+	if ((var = Get_variable (str)) == NULL) {
+
+		PyErr_Format (PyExc_KeyError, "Unknown variable %s", str);
+		return NULL;
+	}
+
+	if ((attr = var->attr) == NULL) {
+
+		PyErr_Format (PyExc_KeyError, "No attributes for variable %s", str);
+		return NULL;
+	}
+
+	if ((dict = PyDict_New ()) == NULL)
+		return NULL;
+
+	for (i = 0; i < attr->count; i++) {
+
+		PyDict_SetItemString (dict, 
+			attr->data[i].key,
+			make_attribute_value (attr->data[i].values));
+	}
+	return dict;
+}
+
+
+/*******************************************************************************
+ *
+ *	Return dict (metadata, value) for all metadata sections
+ */
+static	PyObject * cef_metadata (PyObject * self, PyObject * args)
+{
+	PyObject *	dict = NULL;
+	int		count = Metadata_count();
+	int		i;
+
+	if (! PyArg_ParseTuple (args, ""))
+		return NULL;
+
+	if ((dict = PyDict_New ()) == NULL)
+		return NULL;
+
+	for (i = 0; i < count; i++) {
+
+		t_meta *	meta = Get_meta_number (i);
+
+		PyDict_SetItemString (dict,
+			meta->name,
+			make_attribute_value (meta->entry));
+	}
+
+	return dict;
 }
 
 
@@ -714,6 +809,19 @@ PyDoc_STRVAR(doc_timestamp,
 	"timestamp (varname: str) -> np.array (dtype=float)\n\n"
 	"Return numpy array of Unix timestamps");
 
+PyDoc_STRVAR(doc_gattrs,
+	"gattrs () -> Dict [str, str|List[str]]\n\n"
+	"Return a dictionnary of global attributes (name, value)");
+
+PyDoc_STRVAR(doc_vattrs,
+	"vattrs (varname: str) -> Dict [str, str|List[str]]\n\n"
+	"Return a dictionnary of (attribute, value) for a given variable");
+
+PyDoc_STRVAR(doc_metadata,
+	"metadata () -> Dict [str, List[str]]\n\n"
+	"Return a dictionnary of (metadata-section, values) for all metada sections");
+
+
 /*******************************************************************************
  *
  *	List of library callable methods
@@ -740,6 +848,9 @@ static	PyMethodDef fonctions [] = {
 	{ "datetime",		datetime,		METH_VARARGS,	doc_datetime },
 	{ "datetime64",		datetime64,		METH_VARARGS,	doc_datetime64 },
 	{ "timestamp",		timestamp,		METH_VARARGS,	doc_timestamp },
+	{ "gattrs",		cef_gattrs,		METH_VARARGS,	doc_gattrs },
+	{ "vattrs",		cef_vattrs,		METH_VARARGS,	doc_vattrs},
+	{ "metadata",		cef_metadata,		METH_VARARGS,	doc_metadata },
 	{ NULL, NULL, 0, NULL }
 };
 

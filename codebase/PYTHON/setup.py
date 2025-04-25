@@ -1,14 +1,15 @@
 #! /usr/bin/env python
 
-VERSION="1.8.4"
-
 from setuptools import setup
 from setuptools import Extension
-from os import getenv
 import numpy as np
 
-ceflib_dir = getenv ("CEFLIB_DIR")
-cislib_dir = getenv ("CISLIB_DIR")
+from get_version import get_version
+
+VERSION = get_version()
+
+ceflib_dir = "../LIB"
+cislib_dir = "../C"
 
 module = Extension ('ceflib',
 	sources = [ "src/ceflib.c" ],
@@ -16,7 +17,6 @@ module = Extension ('ceflib',
 		"%s/inc" % cislib_dir,
 		"%s/inc" % ceflib_dir,
 		np.get_include(),
-		# "%s/core/include" % numpy_dir,
 	],
 	library_dirs = [ 
 		"%s/bin" % cislib_dir,
